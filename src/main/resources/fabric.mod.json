@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "id": "serverstatusdiscord",
   "version": "${version}",
-  "name": "MC Server Status → Discord",
+  "name": "SSD",
   "description": "Sends Discord webhook notifications when the server goes online/offline and keeps a Discord channel topic in sync with the live player count.",
   "authors": ["Andrewwwwwwwwwwwwwww"],
   "license": "MIT",
-  "environment": "*",
+  "environment": "server",
   "entrypoints": {
     "main": ["io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.ServerStatusDiscord"]
   },
@@ -18,7 +18,7 @@
   "icon": "assets/serverstatusdiscord/icon.png",
   "depends": {
     "fabricloader": ">=0.19.2",
-    "fabric-api": "*",
+    "fabric-api": ">=0.148.2",
     "minecraft": "~26.1"
   }
 }

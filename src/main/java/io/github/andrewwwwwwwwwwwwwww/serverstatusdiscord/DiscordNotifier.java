@@ -82,8 +82,13 @@ public class DiscordNotifier {
         queueChannelTopic("Players online: " + current + "/" + max);
     }
 
-    public static void setChannelTopicOffline() {
-        queueChannelTopic("Server Offline");
+    public static synchronized void setChannelTopicOffline() {
+        if (pendingTopicTask != null && !pendingTopicTask.isDone()) {
+            pendingTopicTask.cancel(false);
+            pendingTopicTask = null;
+        }
+        pendingTopic = "Server Offline";
+        flushPendingTopic();
     }
 
     private static synchronized void queueChannelTopic(String topic) {
