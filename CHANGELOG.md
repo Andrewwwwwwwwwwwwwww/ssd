@@ -1,4 +1,12 @@
-# SSD (Server Status Discord) Changelog
+# SSD (Server Status to Discord) Changelog
+
+## [0.2.2] - 2026-05-15
+
+### Changed
+- Mod display name corrected to `SSD (Server Status to Discord)`.
+- GitHub repository renamed from `serverstatusdiscord` to `ssd` — all contact URLs updated in `fabric.mod.json`.
+
+---
 
 ## [0.2.1] - 2026-05-15
 
