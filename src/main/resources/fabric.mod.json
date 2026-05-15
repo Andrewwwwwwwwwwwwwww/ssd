@@ -3,13 +3,19 @@
   "id": "serverstatusdiscord",
   "version": "${version}",
   "name": "MC Server Status → Discord",
-  "description": "Sends Discord webhook notifications when the server goes online or offline.",
+  "description": "Sends Discord webhook notifications when the server goes online/offline and keeps a Discord channel topic in sync with the live player count.",
   "authors": ["Andrewwwwwwwwwwwwwww"],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.example.serverstatusdiscord.ServerStatusDiscord"]
+    "main": ["io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.ServerStatusDiscord"]
   },
+  "contact": {
+    "homepage": "https://github.com/Andrewwwwwwwwwwwwwww/serverstatusdiscord",
+    "sources": "https://github.com/Andrewwwwwwwwwwwwwww/serverstatusdiscord",
+    "issues": "https://github.com/Andrewwwwwwwwwwwwwww/serverstatusdiscord/issues"
+  },
+  "icon": "assets/serverstatusdiscord/icon.png",
   "depends": {
     "fabricloader": ">=0.19.2",
     "fabric-api": "*",
