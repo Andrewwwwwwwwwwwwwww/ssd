@@ -36,4 +36,4 @@ Leave any field blank to disable the corresponding feature.
 
 ## License
 
-MIT
+All Rights Reserved. See the [LICENSE](LICENSE) file — these mods are proprietary.

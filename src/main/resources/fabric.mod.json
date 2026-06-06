@@ -5,7 +5,7 @@
   "name": "SSD (Server Status to Discord)",
   "description": "Sends Discord webhook notifications when the server goes online/offline and keeps a Discord channel topic in sync with the live player count.",
   "authors": ["Andrewwwwwwwwwwwwwww"],
-  "license": "MIT",
+  "license": "All Rights Reserved",
   "environment": "server",
   "entrypoints": {
     "main": ["io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.ServerStatusDiscord"]
