@@ -1,5 +1,12 @@
 # SSD (Server Status to Discord) Changelog
 
+## [0.2.3] - 2026-06-16
+
+### Changed
+- **Updated to Minecraft 26.2.** Bumped `minecraft_version` to `26.2`, Fabric Loader to `0.19.3`, and
+  Fabric API to `0.152.1+26.2` (Loom stays on `1.16.2`). `fabric.mod.json` dependency bounds raised to
+  `minecraft ~26.2`, `fabricloader >=0.19.3`, `fabric-api >=0.152.1`. No code changes were required.
+
 ## [0.2.2] - 2026-05-15
 
 ### Changed
