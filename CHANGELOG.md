@@ -1,5 +1,13 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.0.0] - 2026-06-27
+
+### Changed
+- **Stable 1.0.0 release.** No functional changes from 0.2.3 — marks the mod stable and aligns it with the
+  unified release across the mod suite.
+- **Jar filenames now include the Minecraft version** (e.g. `serverstatusdiscord-1.0.0+mc26.2.jar`).
+- A parallel **MC 26.1.2** build is now published (`serverstatusdiscord-1.0.0+mc26.1.2.jar`).
+
 ## [0.2.3] - 2026-06-16
 
 ### Changed
