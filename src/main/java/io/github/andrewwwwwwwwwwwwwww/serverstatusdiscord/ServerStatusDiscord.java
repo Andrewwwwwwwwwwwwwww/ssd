@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -175,9 +176,18 @@ public class ServerStatusDiscord implements ModInitializer {
                 return 0;
             }
             String code = AccountLinks.generateCode(player.getUUID(), player.getName().getString());
-            ctx.getSource().sendSuccess(() -> Component.literal(
-                "Your Discord link code is: " + code
-                + "\nRun /link " + code + " in Discord within 5 minutes to finish linking."), false);
+            // The code itself is click-to-copy so the player can paste it into Discord's /link.
+            Component copyableCode = Component.literal(code).withStyle(style -> style
+                .withColor(ChatFormatting.AQUA)
+                .withBold(true)
+                .withClickEvent(new ClickEvent.CopyToClipboard(code))
+                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy"))));
+            Component message = Component.literal("Your Discord link code is: ").withStyle(ChatFormatting.GREEN)
+                .append(copyableCode)
+                .append(Component.literal(" (click to copy)\n").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal("Enter it with /link in Discord within 5 minutes to finish linking.")
+                    .withStyle(ChatFormatting.GRAY));
+            ctx.getSource().sendSuccess(() -> message, false);
             return 1;
         }));
     }

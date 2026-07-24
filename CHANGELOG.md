@@ -1,5 +1,11 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.4] - 2026-07-23
+
+### Changed
+- The link code from in-game `/link` is now **click-to-copy** — clicking it copies the code to your
+  clipboard (with a "Click to copy" tooltip) so you can paste it straight into Discord's `/link`.
+
 ## [1.1.3] - 2026-07-23
 
 ### Added
