@@ -1,5 +1,17 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.6] - 2026-07-23
+
+### Added
+- **Link by typing `/link CODE` (or `!link CODE`) as a chat message** in the Discord chat channel,
+  not only via the slash command. This covers servers where the bot was invited without the
+  `applications.commands` scope (so the slash command doesn't appear). Such messages are consumed
+  for linking and no longer relayed into the game.
+
+### Removed
+- The `/linkdiscord` in-game alias added in 1.1.5 — the in-game `/link` command was never the
+  problem, so it's back to just `/link`.
+
 ## [1.1.5] - 2026-07-23
 
 ### Added

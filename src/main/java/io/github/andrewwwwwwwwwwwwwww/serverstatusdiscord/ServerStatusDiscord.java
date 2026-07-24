@@ -1,6 +1,5 @@
 package io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
@@ -90,7 +89,7 @@ public class ServerStatusDiscord implements ModInitializer {
             "[Discord] Link your account to chat with Discord and get @mentioned in-game!")
             .withStyle(ChatFormatting.YELLOW));
         player.sendSystemMessage(Component.literal(
-            "Step 1: run /link (or /linkdiscord) here to get a 6-character code.").withStyle(ChatFormatting.GRAY));
+            "Step 1: run /link here to get a 6-character code.").withStyle(ChatFormatting.GRAY));
         player.sendSystemMessage(Component.literal(
             "Step 2: enter /link <code> in our Discord server.").withStyle(ChatFormatting.GRAY));
     }
@@ -167,12 +166,7 @@ public class ServerStatusDiscord implements ModInitializer {
     }
 
     private static void registerLinkCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
-        Command<CommandSourceStack> linkExecutor = ServerStatusDiscord::runLinkCommand;
-        // Register a uniquely-named alias too: on a heavily-modded server another mod may also
-        // register "/link" and clobber ours (last registration wins), so "/linkdiscord" is a
-        // guaranteed-available fallback.
-        dispatcher.register(Commands.literal("link").executes(linkExecutor));
-        dispatcher.register(Commands.literal("linkdiscord").executes(linkExecutor));
+        dispatcher.register(Commands.literal("link").executes(ServerStatusDiscord::runLinkCommand));
     }
 
     private static int runLinkCommand(CommandContext<CommandSourceStack> ctx) {

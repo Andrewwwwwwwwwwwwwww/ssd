@@ -134,9 +134,40 @@ public final class DiscordBot extends ListenerAdapter {
         String content = event.getMessage().getContentDisplay();
 
         if (channelId.equals(Config.chatChannelId) && !Config.chatChannelId.isBlank()) {
-            relayDiscordToMc(event.getAuthor().getEffectiveName(), content);
+            // Let people link by simply typing "/link CODE" as a chat message too (not just the
+            // slash command), since the slash command doesn't show up if the bot was invited
+            // without the applications.commands scope. Handle it instead of relaying to MC.
+            String code = parseLinkCommand(content);
+            if (code != null) {
+                handleChatLink(event, code);
+            } else {
+                relayDiscordToMc(event.getAuthor().getEffectiveName(), content);
+            }
         } else if (channelId.equals(Config.consoleChannelId) && !Config.consoleChannelId.isBlank()) {
             handleConsole(event, content);
+        }
+    }
+
+    /** Extracts the code from a chat message of the form "/link CODE" (or "!link CODE"), else null. */
+    private static String parseLinkCommand(String content) {
+        String trimmed = content.strip();
+        for (String prefix : new String[]{"/link ", "!link "}) {
+            if (trimmed.regionMatches(true, 0, prefix, 0, prefix.length())) {
+                String code = trimmed.substring(prefix.length()).strip();
+                return code.isBlank() ? null : code;
+            }
+        }
+        return null;
+    }
+
+    private void handleChatLink(MessageReceivedEvent event, String code) {
+        String discordName = event.getMember() != null
+            ? event.getMember().getEffectiveName() : event.getAuthor().getEffectiveName();
+        Optional<String> linkedName = AccountLinks.redeemCode(code, event.getAuthor().getId(), discordName);
+        if (linkedName.isPresent()) {
+            event.getMessage().reply("Linked to Minecraft account **" + linkedName.get() + "**.").queue();
+        } else {
+            event.getMessage().reply("That code is invalid or has expired. Run `/link` in-game to get a fresh one.").queue();
         }
     }
 
