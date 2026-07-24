@@ -14,6 +14,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.players.NameAndId;
 import org.slf4j.Logger;
@@ -214,8 +215,10 @@ public final class DiscordBot extends ListenerAdapter {
 
     private void relayDiscordToMc(String author, String content) {
         if (content.isBlank()) return;
-        // Dark-blue "[Discord]" tag so it's visually distinct from in-game chat; name + message stay white.
-        Component line = Component.literal("[Discord] ").withStyle(ChatFormatting.DARK_BLUE)
+        // Discord "blurple" (#5865F2) "[Discord]" tag so it's visually distinct from in-game chat;
+        // name + message stay white.
+        Component line = Component.literal("[Discord] ")
+            .withStyle(style -> style.withColor(TextColor.fromRgb(0x5865F2)))
             .append(Component.literal(author + ": " + content).withStyle(ChatFormatting.WHITE));
         server.execute(() -> {
             RELAYING_FROM_DISCORD.set(true);

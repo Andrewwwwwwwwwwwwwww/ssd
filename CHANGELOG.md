@@ -1,5 +1,11 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.8] - 2026-07-23
+
+### Changed
+- The in-game `[Discord]` chat tag is now Discord "blurple" (#5865F2) — a lighter, on-brand blue —
+  instead of the darker `DARK_BLUE`.
+
 ## [1.1.7] - 2026-07-23
 
 ### Fixed
