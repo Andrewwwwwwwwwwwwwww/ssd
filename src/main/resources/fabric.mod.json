@@ -3,7 +3,7 @@
   "id": "serverstatusdiscord",
   "version": "${version}",
   "name": "SSD (Server Status to Discord)",
-  "description": "Sends Discord webhook notifications when the server goes online/offline and keeps a Discord channel topic in sync with the live player count.",
+  "description": "A single-server Discord bridge: online/offline notifications, live player count, two-way chat relay with skin-head avatars, account linking, an OP-gated console channel, and an update checker.",
   "authors": ["Andrewwwwwwwwwwwwwww"],
   "license": "All Rights Reserved",
   "environment": "server",

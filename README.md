@@ -1,13 +1,22 @@
-# MC Server Status → Discord
+# SSD — Server Status to Discord
 
-A Fabric mod that posts server online/offline notifications to a Discord webhook and keeps a Discord channel's topic in sync with the live player count.
+A single-server Fabric mod that bridges a Minecraft server and one Discord server: a live status
+line in the chat channel's topic, two-way chat with skin-head avatars, account linking, an OP-gated
+console channel, and an update checker.
 
 ## Features
 
-- **Online/offline embeds** — when the server starts and stops, a colored embed is sent to your Discord webhook.
-- **Live player count** — the topic of a Discord channel of your choice is kept current as players join and leave (`Players online: 3/20`). When the server shuts down it switches to `Server Offline`.
-- **Rate-limited** — Discord caps channel-topic edits to 2 per 10 minutes, so updates are debounced server-side to avoid 429s on busy servers.
-- **Async HTTP** — all Discord traffic is fire-and-forget so the server tick is never blocked.
+- **Live status in the chat channel topic** — the chat channel's topic (description) shows a live status line, updated as players join and leave:
+
+  > ✅ 2/12 player(s) online | Server started \<14 hours ago\> | Last updated: \<July 23, 2026 6:40 PM\>
+
+  When the server shuts down it becomes `🛑 Server offline | Last updated: …`. The times render as Discord's live timestamp pills.
+- **Two-way chat bridge** — in-game chat appears in a Discord channel and messages in that channel are broadcast in-game.
+- **Skin-head chat avatars** — Minecraft messages post to Discord as a pseudo-user with the player's name and skin head, keyed on UUID (works whether or not the player is linked).
+- **Account linking (MC-first)** — players run `/link` in-game for a 6-character code, then `/link <code>` on Discord to bind. Linking can only ever start in-game. One MC account maps to one Discord account.
+- **OP-gated console channel** — messages in a designated channel are run as server commands, with the output replied back — but only for users whose linked Minecraft account is a server operator.
+- **Slash commands** — `/link <code>`, `/unlink`, and `/update` (checks for a newer SSD release).
+- **Rate-limited & async** — channel-topic edits are debounced (Discord caps them at 2 per 10 min) and all HTTP is off the server tick.
 
 ## Configuration
 
@@ -15,17 +24,19 @@ A config file is created at `config/serverstatusdiscord.json` on first run:
 
 ```json
 {
-  "webhookUrl": "https://discord.com/api/webhooks/...",
   "botToken": "your-bot-token-without-the-Bot-prefix",
-  "playerCountChannelId": "the-channel-id-here"
+  "chatChannelId": "the-chat-channel-id-here",
+  "chatWebhookUrl": "https://discord.com/api/webhooks/...",
+  "consoleChannelId": "the-console-channel-id-here"
 }
 ```
 
-- **webhookUrl** — Discord channel → Edit → Integrations → Webhooks → New Webhook → Copy URL.
-- **botToken** — needed only for player count topic updates. Discord Developer Portal → your application → Bot → Reset Token. The bot must have `Manage Channels` permission in the target channel.
-- **playerCountChannelId** — right-click the channel in Discord (with Developer Mode enabled) → Copy Channel ID.
+- **botToken** — required for everything (chat bridge, live topic, console channel, linking, slash commands). Discord Developer Portal → your application → Bot → Reset Token. **Enable the Message Content Intent** on that page, and invite the bot with the `applications.commands` scope. The bot needs `Manage Channels` in the chat channel to update its topic.
+- **chatChannelId** — the two-way chat bridge channel. Its **topic (description)** shows the live status line. Right-click the channel (Developer Mode on) → Copy Channel ID.
+- **chatWebhookUrl** — a webhook on the chat channel, used to post player messages with skin-head avatars. Discord channel → Edit → Integrations → Webhooks → New Webhook → Copy URL.
+- **consoleChannelId** — the channel where OP-linked users can run console commands. Keep it private.
 
-Leave any field blank to disable the corresponding feature.
+Leave any field blank to disable the corresponding feature. Bindings are stored in `config/serverstatusdiscord/links.json`.
 
 ## Installation
 

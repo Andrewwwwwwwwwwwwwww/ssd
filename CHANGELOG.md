@@ -1,5 +1,44 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.0] - 2026-07-23
+
+### Added
+- **Two-way chat bridge.** In-game chat is relayed to a Discord channel and Discord messages in that
+  channel are broadcast in-game. Configured via `chatChannelId` and `chatWebhookUrl`.
+- **Rich live status line in the chat channel topic**, e.g.
+  `✅ 2/12 player(s) online | Server started <t:…:R> | Last updated: <t:…:f>`, using Discord's live
+  timestamp pills (which render even inside a channel topic). Offline becomes
+  `🛑 Server offline | Last updated: …`.
+
+### Removed
+- The separate **status webhook channel** (`webhookUrl`) and the online/offline embeds — the status
+  is now conveyed entirely by the chat channel topic.
+- The separate **player-count channel** (`playerCountChannelId`) — the status line lives on the chat
+  channel topic instead.
+- **Skin-head chat avatars.** Minecraft messages are posted to Discord through a webhook as a
+  pseudo-user showing the player's name and skin head (via `mc-heads.net`). Works for every player,
+  linked or not, since it is keyed on UUID.
+- **Account linking (MC-first).** Players run `/link` in-game to get a 6-character code (valid 5
+  minutes), then run `/link <code>` on Discord to bind their account. Binding can only ever start
+  in-game — there is no way to link by typing a username on Discord. Relationship is 1 MC : 1 Discord.
+  Bindings persist in `config/serverstatusdiscord/links.json`.
+- **OP-gated console channel.** Messages typed in the configured `consoleChannelId` are executed as
+  server console commands and the command output is replied back — but only for users whose linked
+  Minecraft account is a server operator. Everyone else is refused.
+- **Discord slash commands:** `/link <code>`, `/unlink`, and `/update` (compares the running version
+  against the latest GitHub release of the `ssd` repo).
+- **Join/leave lines** are posted to the chat channel.
+
+### Changed
+- Bundles **JDA 5.6.1** (shadowed into the jar; transitive libraries relocated) to power the Gateway
+  connection. The jar is now ~16 MB as a result. slf4j is excluded since Minecraft already ships it.
+- Config handling moved to a dedicated `Config` class; new keys are written back to existing config
+  files automatically on upgrade.
+
+### Requires
+- The bot's **Message Content Intent** must be enabled in the Discord Developer Portal, and the bot
+  must be invited with the `applications.commands` scope for slash commands to appear.
+
 ## [1.0.0] - 2026-06-27
 
 ### Changed

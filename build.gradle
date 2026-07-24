@@ -1,17 +1,61 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'com.gradleup.shadow' version "${shadow_version}"
     id 'maven-publish'
 }
 
 version = "${project.mod_version}+mc${project.minecraft_version}"
 group = project.maven_group
 
-repositories {}
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    shadow
+    implementation.extendsFrom shadow
+}
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    shadow("net.dv8tion:JDA:${project.jda_version}") {
+        exclude module: 'opus-java'
+        // Minecraft already ships slf4j-api on the classpath; bundling a second copy
+        // would duplicate the org.slf4j package.
+        exclude group: 'org.slf4j'
+    }
+}
+
+// This project uses Mojang mappings at runtime directly (no intermediary remap step,
+// hence no `remapJar` task) so `shadowJar` can merge straight from the plain `jar` output.
+tasks.named('jar') {
+    archiveClassifier.set('slim')
+}
+
+shadowJar {
+    configurations = [project.configurations.shadow]
+    archiveClassifier.set('')
+    mergeServiceFiles()
+
+    from("LICENSE") {
+        rename { "${it}_${project.name}" }
+    }
+
+    // Relocate JDA's transitive deps so they can't collide with other mods bundling
+    // different versions of the same libraries.
+    relocate 'okhttp3', 'io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.libs.okhttp3'
+    relocate 'okio', 'io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.libs.okio'
+    relocate 'com.fasterxml.jackson', 'io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.libs.jackson'
+    relocate 'com.neovisionaries', 'io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.libs.neovisionaries'
+    relocate 'gnu.trove', 'io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.libs.trove'
+    relocate 'org.apache.commons.collections4', 'io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord.libs.commonscollections4'
+}
+
+tasks.named('assemble') {
+    dependsOn(tasks.named('shadowJar'))
 }
 
 processResources {
@@ -30,10 +74,4 @@ java {
     withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.name}" }
-    }
 }
