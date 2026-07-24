@@ -110,16 +110,6 @@ public class DiscordNotifier {
         postToChatWebhook(playerName, "https://mc-heads.net/avatar/" + uuid + "/100", message, false);
     }
 
-    /**
-     * Posts a server-side message (server start/stop, {@code /say}, deaths, advancements,
-     * join/leave, etc.) to the chat channel through the webhook, attributed to "Server".
-     * Sent synchronously when {@code blocking} so shutdown messages land before the JVM exits.
-     */
-    public static void relayServerMessage(String message, boolean blocking) {
-        if (message == null || message.isBlank()) return;
-        postToChatWebhook("Server", null, message, blocking);
-    }
-
     private static void postToChatWebhook(String username, String avatarUrl, String content, boolean blocking) {
         if (Config.chatWebhookUrl == null || Config.chatWebhookUrl.isBlank()) return;
 

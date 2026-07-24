@@ -10,6 +10,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -27,12 +29,13 @@ public class ServerStatusDiscord implements ModInitializer {
             serverStartedEpochSeconds = System.currentTimeMillis() / 1000L;
             DiscordBot.start(server);
             DiscordNotifier.updateTopic(onlineTopic(server));
-            DiscordNotifier.relayServerMessage("**Server started**", false);
+            // The "Server started!" chat message is sent by the bot once it finishes connecting
+            // (see DiscordBot.onReady), so it posts as the bot rather than a webhook.
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            // Send synchronously so both land before the JVM exits.
-            DiscordNotifier.relayServerMessage("**Server stopped**", true);
+            DiscordBot bot = DiscordBot.get();
+            if (bot != null) bot.sendToChatChannelBlocking("🔴 **Server stopped!**");
             DiscordNotifier.setTopicImmediately(offlineTopic());
             DiscordBot.shutdown();
         });
@@ -58,11 +61,15 @@ public class ServerStatusDiscord implements ModInitializer {
                 message.signedContent()
             ));
 
-        // Forward server broadcasts (/say, /tellraw @a, deaths, advancements, join/leave, console
-        // chat) to Discord. Skip messages we ourselves broadcast from Discord to avoid an echo loop.
+        // Forward server broadcasts (join/leave, deaths, advancements, /say, console chat) to
+        // Discord via the bot, formatted per event type. Skip action-bar overlays and messages we
+        // ourselves broadcast from Discord (to avoid an echo loop).
         ServerMessageEvents.GAME_MESSAGE.register((server, message, overlay) -> {
-            if (DiscordBot.isRelayingFromDiscord()) return;
-            DiscordNotifier.relayServerMessage(message.getString(), false);
+            if (overlay || DiscordBot.isRelayingFromDiscord()) return;
+            DiscordBot bot = DiscordBot.get();
+            if (bot == null) return;
+            String formatted = formatBroadcast(message);
+            if (formatted != null) bot.sendToChatChannel(formatted);
         });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
@@ -84,6 +91,60 @@ public class ServerStatusDiscord implements ModInitializer {
     private static String offlineTopic() {
         long now = System.currentTimeMillis() / 1000L;
         return "🛑 Server offline | Last updated: <t:" + now + ":f>";
+    }
+
+    // ---- Server-broadcast formatting ------------------------------------------------------
+    // Classifies a vanilla broadcast by its translation key and gives it a Discord-friendly form
+    // with an event icon. Returns null to skip. Bold/italic markdown renders in the bot's messages.
+
+    private static String formatBroadcast(Component message) {
+        if (message.getContents() instanceof TranslatableContents tc) {
+            String key = tc.getKey();
+            Object[] args = tc.getArgs();
+            if (key.startsWith("multiplayer.player.joined")) {
+                return "👋 " + argString(args, 0) + " joined the server";
+            }
+            if (key.equals("multiplayer.player.left")) {
+                return "🚪 " + argString(args, 0) + " left the server";
+            }
+            if (key.startsWith("death.")) {
+                return "💀 " + message.getString();
+            }
+            if (key.startsWith("chat.type.advancement")) {
+                return formatAdvancement(args);
+            }
+            if (key.equals("chat.type.announcement")) {
+                return "📢 " + message.getString();
+            }
+        }
+        // Console chat, /me, mod broadcasts, and anything else: relay the resolved text as-is.
+        String text = message.getString();
+        return text.isBlank() ? null : text;
+    }
+
+    private static String formatAdvancement(Object[] args) {
+        String player = argString(args, 0);
+        String title = "";
+        String description = "";
+        if (args != null && args.length > 1 && args[1] instanceof Component adv) {
+            title = adv.getString(); // already wrapped in [ ]
+            HoverEvent hover = adv.getStyle().getHoverEvent();
+            if (hover instanceof HoverEvent.ShowText showText) {
+                // The hover text is "Title\nDescription"; take everything after the first newline.
+                String hoverText = showText.value().getString();
+                int newline = hoverText.indexOf('\n');
+                if (newline >= 0) description = hoverText.substring(newline + 1).trim();
+            }
+        }
+        String msg = "🤩 " + player + " has made the advancement **" + title + "**";
+        if (!description.isEmpty()) msg += "\n*" + description + "*";
+        return msg;
+    }
+
+    private static String argString(Object[] args, int index) {
+        if (args == null || args.length <= index || args[index] == null) return "";
+        Object arg = args[index];
+        return (arg instanceof Component component) ? component.getString() : String.valueOf(arg);
     }
 
     private static void registerLinkCommand(CommandDispatcher<CommandSourceStack> dispatcher) {

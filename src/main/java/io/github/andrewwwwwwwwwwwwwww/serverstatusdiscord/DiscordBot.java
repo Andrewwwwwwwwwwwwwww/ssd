@@ -42,6 +42,7 @@ public final class DiscordBot extends ListenerAdapter {
 
     private final MinecraftServer server;
     private JDA jda;
+    private boolean startAnnounced = false;
 
     /** True while this thread is broadcasting a Discord-originated message into Minecraft. */
     public static boolean isRelayingFromDiscord() {
@@ -111,6 +112,12 @@ public final class DiscordBot extends ListenerAdapter {
                     "Check whether a newer SSD version has been released")
             ).queue();
         }
+
+        // Announce startup once the bot is actually connected (so it posts as the bot, not a webhook).
+        if (!startAnnounced) {
+            startAnnounced = true;
+            sendToChatChannel("✅ **Server started!**");
+        }
     }
 
     @Override
@@ -172,11 +179,24 @@ public final class DiscordBot extends ListenerAdapter {
         });
     }
 
-    /** Send a plain message into the configured chat channel (used for join/leave/server events). */
+    /** Send a message into the chat channel as the bot (used for join/leave/death/advancement/server events). */
     public void sendToChatChannel(String text) {
         if (jda == null || Config.chatChannelId == null || Config.chatChannelId.isBlank()) return;
         var channel = jda.getTextChannelById(Config.chatChannelId);
-        if (channel != null) channel.sendMessage(text).queue();
+        // Never let relayed text ping anyone, even if a player typed "@everyone" in /say.
+        if (channel != null) channel.sendMessage(text).setAllowedMentions(java.util.Collections.emptyList()).queue();
+    }
+
+    /** Like {@link #sendToChatChannel} but blocks until sent — used on shutdown before JDA closes. */
+    public void sendToChatChannelBlocking(String text) {
+        if (jda == null || Config.chatChannelId == null || Config.chatChannelId.isBlank()) return;
+        var channel = jda.getTextChannelById(Config.chatChannelId);
+        if (channel == null) return;
+        try {
+            channel.sendMessage(text).setAllowedMentions(java.util.Collections.emptyList()).complete();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to send shutdown message: {}", e.getMessage());
+        }
     }
 
     // ---- Console channel ------------------------------------------------------------------

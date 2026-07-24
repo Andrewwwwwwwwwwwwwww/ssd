@@ -1,5 +1,19 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.2] - 2026-07-23
+
+### Changed
+- **Event messages are now formatted with per-type icons and posted by the bot** (instead of a
+  plain webhook), matching a cleaner style:
+  - `👋 {player} joined the server` / `🚪 {player} left the server`
+  - `💀 {death message}`
+  - `🤩 {player} has made the advancement **[Title]**` with the advancement description in italics
+    underneath
+  - `📢 {message}` for `/say`
+  - `✅ **Server started!**` (sent once the bot connects) / `🔴 **Server stopped!**`
+- Player chat continues to relay through the webhook with skin-head avatars.
+- Relayed text can no longer ping `@everyone`/roles/users (allowed-mentions disabled on bot messages).
+
 ## [1.1.1] - 2026-07-23
 
 ### Added
