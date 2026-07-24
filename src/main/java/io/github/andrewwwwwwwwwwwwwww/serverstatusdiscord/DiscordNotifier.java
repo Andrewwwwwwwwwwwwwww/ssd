@@ -10,11 +10,17 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DiscordNotifier {
 
@@ -107,10 +113,40 @@ public class DiscordNotifier {
      */
     public static void relayPlayerChat(String playerName, UUID uuid, String message) {
         if (message == null || message.isBlank()) return;
-        postToChatWebhook(playerName, "https://mc-heads.net/avatar/" + uuid + "/100", message, false);
+        List<String> pingIds = new ArrayList<>();
+        String content = resolveMentions(message, pingIds);
+        postToChatWebhook(playerName, "https://mc-heads.net/avatar/" + uuid + "/100", content, pingIds, false);
     }
 
-    private static void postToChatWebhook(String username, String avatarUrl, String content, boolean blocking) {
+    /** Matches an "@" followed by a run of name characters (Discord handle/display-name chars). */
+    private static final Pattern MENTION = Pattern.compile("@([A-Za-z0-9._\\-]+)");
+
+    /**
+     * Turns an in-game {@code @name} into a Discord {@code <@id>} ping when {@code name} matches a
+     * linked account's Discord name. Collects the resolved IDs into {@code pingIds} so only those
+     * users are actually pinged. Unmatched {@code @tokens} are left as plain text.
+     */
+    private static String resolveMentions(String message, List<String> pingIds) {
+        Map<String, String> names = AccountLinks.discordNamesToIds();
+        if (names.isEmpty()) return message;
+
+        Matcher m = MENTION.matcher(message);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            String id = names.get(m.group(1).toLowerCase(Locale.ROOT));
+            if (id != null) {
+                m.appendReplacement(sb, Matcher.quoteReplacement("<@" + id + ">"));
+                if (!pingIds.contains(id)) pingIds.add(id);
+            } else {
+                m.appendReplacement(sb, Matcher.quoteReplacement(m.group()));
+            }
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    private static void postToChatWebhook(String username, String avatarUrl, String content,
+                                          List<String> pingIds, boolean blocking) {
         if (Config.chatWebhookUrl == null || Config.chatWebhookUrl.isBlank()) return;
 
         try {
@@ -118,9 +154,14 @@ public class DiscordNotifier {
             payload.addProperty("username", username);
             if (avatarUrl != null) payload.addProperty("avatar_url", avatarUrl);
             payload.addProperty("content", content);
-            // Never let relayed text ping @everyone / roles / users from Discord.
+            // Suppress @everyone/role/user pings except the specific linked users we resolved.
             JsonObject allowed = new JsonObject();
             allowed.add("parse", new JsonArray());
+            if (pingIds != null && !pingIds.isEmpty()) {
+                JsonArray users = new JsonArray();
+                for (String id : pingIds) users.add(id);
+                allowed.add("users", users);
+            }
             payload.add("allowed_mentions", allowed);
 
             HttpRequest request = HttpRequest.newBuilder()

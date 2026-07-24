@@ -2,6 +2,7 @@ package io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord;
 
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.ChatFormatting;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -40,8 +41,10 @@ public class ServerStatusDiscord implements ModInitializer {
             DiscordBot.shutdown();
         });
 
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-            DiscordNotifier.updateTopic(onlineTopic(server)));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            DiscordNotifier.updateTopic(onlineTopic(server));
+            remindIfUnlinked(handler.player);
+        });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
             disconnectPendingTick = server.overworld().getGameTime() + 1L);
@@ -74,6 +77,19 @@ public class ServerStatusDiscord implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
             registerLinkCommand(dispatcher));
+    }
+
+    /** On join, nudge players who haven't linked their Discord account yet (only if a bot is set up). */
+    private static void remindIfUnlinked(ServerPlayer player) {
+        if (!Config.hasBot()) return;
+        if (AccountLinks.isMcLinked(player.getUUID())) return;
+        player.sendSystemMessage(Component.literal(
+            "[Discord] Link your account to chat with Discord and get @mentioned in-game!")
+            .withStyle(ChatFormatting.YELLOW));
+        player.sendSystemMessage(Component.literal(
+            "Step 1: run /link here to get a 6-character code.").withStyle(ChatFormatting.GRAY));
+        player.sendSystemMessage(Component.literal(
+            "Step 2: enter /link <code> in our Discord server.").withStyle(ChatFormatting.GRAY));
     }
 
     // ---- Channel-topic status line --------------------------------------------------------

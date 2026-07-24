@@ -125,6 +125,10 @@ public final class DiscordBot extends ListenerAdapter {
         // Ignore anything the bot or a webhook posted, to avoid loops.
         if (event.getAuthor().isBot() || event.isWebhookMessage()) return;
 
+        // Keep the cached Discord name fresh so in-game @mentions resolve to the current name.
+        AccountLinks.refreshDiscordName(event.getAuthor().getId(), event.getMember() != null
+            ? event.getMember().getEffectiveName() : event.getAuthor().getEffectiveName());
+
         String channelId = event.getChannel().getId();
         String content = event.getMessage().getContentDisplay();
 
@@ -140,7 +144,9 @@ public final class DiscordBot extends ListenerAdapter {
         switch (event.getName()) {
             case "link" -> {
                 String code = event.getOption("code") != null ? event.getOption("code").getAsString() : "";
-                Optional<String> linkedName = AccountLinks.redeemCode(code, event.getUser().getId());
+                String discordName = event.getMember() != null
+                    ? event.getMember().getEffectiveName() : event.getUser().getEffectiveName();
+                Optional<String> linkedName = AccountLinks.redeemCode(code, event.getUser().getId(), discordName);
                 if (linkedName.isPresent()) {
                     event.reply("Linked to Minecraft account **" + linkedName.get() + "**.")
                         .setEphemeral(true).queue();

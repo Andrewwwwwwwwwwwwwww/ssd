@@ -1,6 +1,18 @@
 # SSD (Server Status to Discord) Changelog
 
-## [1.1.2] - 2026-07-23
+## [1.1.3] - 2026-07-23
+
+### Added
+- **@-mention Discord users from in-game.** Typing `@DiscordName` in chat now pings that person on
+  Discord when their account is linked (matched against the linked user's Discord name; only the
+  resolved user is pinged — never `@everyone`/roles). The cached Discord name is stored in
+  `links.json` and refreshed whenever the user acts on Discord.
+- **Login reminder for unlinked players.** On join, players who haven't linked yet get a short
+  in-game prompt showing `/link` and the two-step process (only shown when a bot is configured).
+
+### Changed
+- `links.json` entries now store `{ "id", "name" }` per Minecraft UUID (was just the ID). Old files
+  are read transparently and upgraded on the next save.
 
 ### Changed
 - **Event messages are now formatted with per-type icons and posted by the bot** (instead of a
