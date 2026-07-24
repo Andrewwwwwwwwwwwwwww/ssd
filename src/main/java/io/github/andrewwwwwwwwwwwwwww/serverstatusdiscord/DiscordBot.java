@@ -100,6 +100,14 @@ public final class DiscordBot extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         LOGGER.info("Discord bot ready as {}.", event.getJDA().getSelfUser().getAsTag());
+
+        // Wipe any stale GLOBAL slash commands left on this bot application by a previously-used mod
+        // (e.g. the old chat mod's /links, /link, /unlink). This mod only ever registers per-guild
+        // commands (below), so clearing the global set removes the leftovers without touching ours.
+        event.getJDA().updateCommands().queue(
+            v -> LOGGER.info("Cleared stale global slash commands."),
+            err -> LOGGER.warn("Could not clear global slash commands: {}", err.getMessage()));
+
         // Register slash commands per-guild so they appear immediately (global commands take ~1h).
         OptionData codeOption = new OptionData(OptionType.STRING, "code",
             "The 6-character code shown to you in-game after running /link", true);

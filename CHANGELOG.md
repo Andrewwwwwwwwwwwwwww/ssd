@@ -1,5 +1,14 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.7] - 2026-07-23
+
+### Fixed
+- **Clear stale global slash commands on startup.** If the same Discord bot previously ran another
+  mod (e.g. DMCC), its global commands (`/links`, differently-worded `/link`/`/unlink`, etc.) kept
+  showing up alongside SSD's. SSD registers commands per-guild, so on connect it now wipes the bot's
+  global command set, leaving only SSD's commands. (Discord may take a few minutes to refresh the
+  client's command list.)
+
 ## [1.1.6] - 2026-07-23
 
 ### Added
