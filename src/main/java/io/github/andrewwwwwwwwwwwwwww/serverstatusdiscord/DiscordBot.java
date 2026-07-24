@@ -34,8 +34,19 @@ public final class DiscordBot extends ListenerAdapter {
 
     private static DiscordBot instance;
 
+    /**
+     * Set on the server thread while broadcasting a message that came FROM Discord, so the
+     * GAME_MESSAGE relay can skip it and avoid a Discord -> MC -> Discord echo loop.
+     */
+    private static final ThreadLocal<Boolean> RELAYING_FROM_DISCORD = ThreadLocal.withInitial(() -> false);
+
     private final MinecraftServer server;
     private JDA jda;
+
+    /** True while this thread is broadcasting a Discord-originated message into Minecraft. */
+    public static boolean isRelayingFromDiscord() {
+        return RELAYING_FROM_DISCORD.get();
+    }
 
     private DiscordBot(MinecraftServer server) {
         this.server = server;
@@ -151,7 +162,14 @@ public final class DiscordBot extends ListenerAdapter {
     private void relayDiscordToMc(String author, String content) {
         if (content.isBlank()) return;
         Component line = Component.literal("[Discord] " + author + ": " + content);
-        server.execute(() -> server.getPlayerList().broadcastSystemMessage(line, false));
+        server.execute(() -> {
+            RELAYING_FROM_DISCORD.set(true);
+            try {
+                server.getPlayerList().broadcastSystemMessage(line, false);
+            } finally {
+                RELAYING_FROM_DISCORD.set(false);
+            }
+        });
     }
 
     /** Send a plain message into the configured chat channel (used for join/leave/server events). */

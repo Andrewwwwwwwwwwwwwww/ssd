@@ -27,22 +27,21 @@ public class ServerStatusDiscord implements ModInitializer {
             serverStartedEpochSeconds = System.currentTimeMillis() / 1000L;
             DiscordBot.start(server);
             DiscordNotifier.updateTopic(onlineTopic(server));
+            DiscordNotifier.relayServerMessage("**Server started**", false);
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            // Send synchronously so both land before the JVM exits.
+            DiscordNotifier.relayServerMessage("**Server stopped**", true);
             DiscordNotifier.setTopicImmediately(offlineTopic());
             DiscordBot.shutdown();
         });
 
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            DiscordNotifier.updateTopic(onlineTopic(server));
-            announceToChat(handler.player.getName().getString() + " joined the game");
-        });
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+            DiscordNotifier.updateTopic(onlineTopic(server)));
 
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            disconnectPendingTick = server.overworld().getGameTime() + 1L;
-            announceToChat(handler.player.getName().getString() + " left the game");
-        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+            disconnectPendingTick = server.overworld().getGameTime() + 1L);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (disconnectPendingTick < 0L) return;
@@ -59,13 +58,15 @@ public class ServerStatusDiscord implements ModInitializer {
                 message.signedContent()
             ));
 
+        // Forward server broadcasts (/say, /tellraw @a, deaths, advancements, join/leave, console
+        // chat) to Discord. Skip messages we ourselves broadcast from Discord to avoid an echo loop.
+        ServerMessageEvents.GAME_MESSAGE.register((server, message, overlay) -> {
+            if (DiscordBot.isRelayingFromDiscord()) return;
+            DiscordNotifier.relayServerMessage(message.getString(), false);
+        });
+
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
             registerLinkCommand(dispatcher));
-    }
-
-    private static void announceToChat(String text) {
-        DiscordBot bot = DiscordBot.get();
-        if (bot != null) bot.sendToChatChannel("*" + text + "*");
     }
 
     // ---- Channel-topic status line --------------------------------------------------------

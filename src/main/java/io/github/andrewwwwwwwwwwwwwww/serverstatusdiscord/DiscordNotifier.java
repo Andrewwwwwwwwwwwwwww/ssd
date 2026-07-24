@@ -106,15 +106,29 @@ public class DiscordNotifier {
      * player regardless of whether their account is linked, because it is keyed on UUID only.
      */
     public static void relayPlayerChat(String playerName, UUID uuid, String message) {
-        if (Config.chatWebhookUrl == null || Config.chatWebhookUrl.isBlank()) return;
         if (message == null || message.isBlank()) return;
+        postToChatWebhook(playerName, "https://mc-heads.net/avatar/" + uuid + "/100", message, false);
+    }
+
+    /**
+     * Posts a server-side message (server start/stop, {@code /say}, deaths, advancements,
+     * join/leave, etc.) to the chat channel through the webhook, attributed to "Server".
+     * Sent synchronously when {@code blocking} so shutdown messages land before the JVM exits.
+     */
+    public static void relayServerMessage(String message, boolean blocking) {
+        if (message == null || message.isBlank()) return;
+        postToChatWebhook("Server", null, message, blocking);
+    }
+
+    private static void postToChatWebhook(String username, String avatarUrl, String content, boolean blocking) {
+        if (Config.chatWebhookUrl == null || Config.chatWebhookUrl.isBlank()) return;
 
         try {
             JsonObject payload = new JsonObject();
-            payload.addProperty("username", playerName);
-            payload.addProperty("avatar_url", "https://mc-heads.net/avatar/" + uuid + "/100");
-            payload.addProperty("content", message);
-            // Never let player text ping @everyone / roles / users from Discord.
+            payload.addProperty("username", username);
+            if (avatarUrl != null) payload.addProperty("avatar_url", avatarUrl);
+            payload.addProperty("content", content);
+            // Never let relayed text ping @everyone / roles / users from Discord.
             JsonObject allowed = new JsonObject();
             allowed.add("parse", new JsonArray());
             payload.add("allowed_mentions", allowed);
@@ -126,13 +140,17 @@ public class DiscordNotifier {
                 .timeout(Duration.ofSeconds(5))
                 .build();
 
-            HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.discarding())
-                .exceptionally(e -> {
-                    LOGGER.warn("Failed to relay chat to Discord: {}", e.getMessage());
-                    return null;
-                });
+            if (blocking) {
+                HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
+            } else {
+                HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.discarding())
+                    .exceptionally(e -> {
+                        LOGGER.warn("Failed to relay message to Discord: {}", e.getMessage());
+                        return null;
+                    });
+            }
         } catch (Exception e) {
-            LOGGER.warn("Failed to relay chat to Discord", e);
+            LOGGER.warn("Failed to relay message to Discord", e);
         }
     }
 }

@@ -1,5 +1,19 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.1] - 2026-07-23
+
+### Added
+- **Server started / stopped messages** are now posted to the chat channel (the stop message is
+  sent synchronously so it lands before the server process exits).
+- **Server broadcasts are relayed to Discord** — `/say`, `/tellraw @a`, death messages,
+  advancements, join/leave, and console chat now forward to the chat channel (via the
+  `GAME_MESSAGE` event), attributed to "Server". A loop-guard prevents Discord-originated messages
+  from echoing back.
+
+### Changed
+- Join/leave announcements now come through the unified broadcast relay instead of a separate
+  code path.
+
 ## [1.1.0] - 2026-07-23
 
 ### Added
