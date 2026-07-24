@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -174,7 +175,9 @@ public final class DiscordBot extends ListenerAdapter {
 
     private void relayDiscordToMc(String author, String content) {
         if (content.isBlank()) return;
-        Component line = Component.literal("[Discord] " + author + ": " + content);
+        // Dark-blue "[Discord]" tag so it's visually distinct from in-game chat; name + message stay white.
+        Component line = Component.literal("[Discord] ").withStyle(ChatFormatting.DARK_BLUE)
+            .append(Component.literal(author + ": " + content).withStyle(ChatFormatting.WHITE));
         server.execute(() -> {
             RELAYING_FROM_DISCORD.set(true);
             try {

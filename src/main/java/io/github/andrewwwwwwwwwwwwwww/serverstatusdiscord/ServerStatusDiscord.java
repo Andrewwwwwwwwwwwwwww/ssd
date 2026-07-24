@@ -1,6 +1,8 @@
 package io.github.andrewwwwwwwwwwwwwww.serverstatusdiscord;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.ChatFormatting;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -88,7 +90,7 @@ public class ServerStatusDiscord implements ModInitializer {
             "[Discord] Link your account to chat with Discord and get @mentioned in-game!")
             .withStyle(ChatFormatting.YELLOW));
         player.sendSystemMessage(Component.literal(
-            "Step 1: run /link here to get a 6-character code.").withStyle(ChatFormatting.GRAY));
+            "Step 1: run /link (or /linkdiscord) here to get a 6-character code.").withStyle(ChatFormatting.GRAY));
         player.sendSystemMessage(Component.literal(
             "Step 2: enter /link <code> in our Discord server.").withStyle(ChatFormatting.GRAY));
     }
@@ -165,30 +167,37 @@ public class ServerStatusDiscord implements ModInitializer {
     }
 
     private static void registerLinkCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("link").executes(ctx -> {
-            ServerPlayer player = ctx.getSource().getPlayer();
-            if (player == null) {
-                ctx.getSource().sendFailure(Component.literal("Only players can generate a link code."));
-                return 0;
-            }
-            if (!Config.hasBot()) {
-                ctx.getSource().sendFailure(Component.literal("Account linking is not configured on this server."));
-                return 0;
-            }
-            String code = AccountLinks.generateCode(player.getUUID(), player.getName().getString());
-            // The code itself is click-to-copy so the player can paste it into Discord's /link.
-            Component copyableCode = Component.literal(code).withStyle(style -> style
-                .withColor(ChatFormatting.AQUA)
-                .withBold(true)
-                .withClickEvent(new ClickEvent.CopyToClipboard(code))
-                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy"))));
-            Component message = Component.literal("Your Discord link code is: ").withStyle(ChatFormatting.GREEN)
-                .append(copyableCode)
-                .append(Component.literal(" (click to copy)\n").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal("Enter it with /link in Discord within 5 minutes to finish linking.")
-                    .withStyle(ChatFormatting.GRAY));
-            ctx.getSource().sendSuccess(() -> message, false);
-            return 1;
-        }));
+        Command<CommandSourceStack> linkExecutor = ServerStatusDiscord::runLinkCommand;
+        // Register a uniquely-named alias too: on a heavily-modded server another mod may also
+        // register "/link" and clobber ours (last registration wins), so "/linkdiscord" is a
+        // guaranteed-available fallback.
+        dispatcher.register(Commands.literal("link").executes(linkExecutor));
+        dispatcher.register(Commands.literal("linkdiscord").executes(linkExecutor));
+    }
+
+    private static int runLinkCommand(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer player = ctx.getSource().getPlayer();
+        if (player == null) {
+            ctx.getSource().sendFailure(Component.literal("Only players can generate a link code."));
+            return 0;
+        }
+        if (!Config.hasBot()) {
+            ctx.getSource().sendFailure(Component.literal("Account linking is not configured on this server."));
+            return 0;
+        }
+        String code = AccountLinks.generateCode(player.getUUID(), player.getName().getString());
+        // The code itself is click-to-copy so the player can paste it into Discord's /link.
+        Component copyableCode = Component.literal(code).withStyle(style -> style
+            .withColor(ChatFormatting.AQUA)
+            .withBold(true)
+            .withClickEvent(new ClickEvent.CopyToClipboard(code))
+            .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy"))));
+        Component message = Component.literal("Your Discord link code is: ").withStyle(ChatFormatting.GREEN)
+            .append(copyableCode)
+            .append(Component.literal(" (click to copy)\n").withStyle(ChatFormatting.GRAY))
+            .append(Component.literal("Enter it with /link in Discord within 5 minutes to finish linking.")
+                .withStyle(ChatFormatting.GRAY));
+        ctx.getSource().sendSuccess(() -> message, false);
+        return 1;
     }
 }

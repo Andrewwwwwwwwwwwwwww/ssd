@@ -1,5 +1,16 @@
 # SSD (Server Status to Discord) Changelog
 
+## [1.1.5] - 2026-07-23
+
+### Added
+- **`/linkdiscord` alias** for the in-game link command. On heavily-modded servers another mod can
+  also register `/link` and win the name (last registration wins in Brigadier), which made `/link`
+  appear to do nothing; `/linkdiscord` is a guaranteed-available fallback.
+
+### Changed
+- The `[Discord]` tag in front of relayed Discord messages in in-game chat is now **dark blue**, to
+  stand out from normal player chat (the name and message stay white).
+
 ## [1.1.4] - 2026-07-23
 
 ### Changed
